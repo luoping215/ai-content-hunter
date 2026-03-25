@@ -1,3 +1,5 @@
+// 飞书推送 - 无需任何 AI API
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
 
@@ -8,7 +10,7 @@ export default async function handler(req, res) {
   const today = new Date().toLocaleDateString('zh-CN')
 
   const scriptText = (scripts || []).slice(0, 3).map((s, i) =>
-    `**脚本${i + 1}·${s.style}**\n📌 ${s.title}\n⚡ Hook：${s.hook}`
+    `**脚本${i + 1}·${s.style}**\n📌 ${s.title}\n⚡ Hook：${s.hook}\n💰 转化：${s.conversion_design?.slice(0, 60) || s.cta?.slice(0, 60) || ''}`
   ).join('\n\n')
 
   const card = {
@@ -24,7 +26,7 @@ export default async function handler(req, res) {
           tag: 'div',
           text: {
             tag: 'lark_md',
-            content: `**📈 今日核心趋势**\n${analysis.core_trend}\n\n**💡 抖音机会点**\n${analysis.douyin_opportunity}`,
+            content: `**📈 今日核心趋势**\n${analysis.core_trend}\n\n**💡 变现机会点**\n${analysis.douyin_opportunity}`,
           },
         },
         { tag: 'hr' },
@@ -35,6 +37,13 @@ export default async function handler(req, res) {
             content: `**🔥 热门话题**\n${(analysis.content_factors?.hot_topics || []).slice(0, 5).map(t => `#${t}`).join('  ')}`,
           },
         },
+        ...(analysis.top_picks?.length ? [{
+          tag: 'div',
+          text: {
+            tag: 'lark_md',
+            content: `**⭐ 今日最佳选题**\n${analysis.top_picks.map(p => `• ${p.title}\n  改编：${p.adaptation_angle}`).join('\n')}`,
+          },
+        }] : []),
         { tag: 'hr' },
         {
           tag: 'div',
@@ -48,15 +57,16 @@ export default async function handler(req, res) {
     },
   }
 
-  const r = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(card),
-  })
-
-  const result = await r.json()
-  if (result.code !== 0) {
-    return res.status(400).json({ error: result.msg || 'Feishu error' })
+  try {
+    const r = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(card),
+    })
+    const result = await r.json()
+    if (result.code !== 0) return res.status(400).json({ error: result.msg || 'Feishu error' })
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
   }
-  res.json({ ok: true })
 }
