@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Head from 'next/head'
 
-const STEP_LABELS = ['YouTube 抓取', 'X.com 搜索', '爆火因素分析', '抖音脚本生成', '飞书推送']
+const STEP_LABELS = ['YouTube 抓取', 'X.com 搜索', '素材整理分析', '一键复制去Claude', '飞书推送']
 
 export default function Home() {
   const [step, setStep] = useState(-1) // -1=idle, 0-4=running, 5=done
@@ -10,6 +10,7 @@ export default function Home() {
   const [posts, setPosts] = useState([])
   const [analysis, setAnalysis] = useState(null)
   const [scripts, setScripts] = useState([])
+  const [claudePrompt, setClaudePrompt] = useState('')
   const [logs, setLogs] = useState([])
   const [activeScript, setActiveScript] = useState(0)
   const [openSections, setOpenSections] = useState({})
@@ -128,22 +129,14 @@ export default function Home() {
       const anData = await anRes.json()
       if (anData.error) throw new Error(anData.error)
       setAnalysis(anData)
-      addLog('✓ 爆火因素分析完成', 'success')
+      if (anData.claude_prompt) setClaudePrompt(anData.claude_prompt)
+      addLog('✓ 素材整理分析完成', 'success')
       setStepState(2, 'done')
       openSection('analysis')
 
-      // Step 3: Scripts
+      // Step 3: Claude prompt ready
       setStep(3); setStepState(3, 'active')
-      addLog('生成3个抖音视频脚本…', 'info')
-      const scRes = await fetch('/api/scripts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analysis: anData }),
-      })
-      const scData = await scRes.json()
-      if (scData.error) throw new Error(scData.error)
-      setScripts(scData.scripts || [])
-      addLog(`✓ 生成 ${scData.scripts?.length || 0} 个视频脚本`, 'success')
+      addLog('✓ Claude.ai Prompt 已生成，点击复制按钮粘贴到 Claude.ai 即可', 'success')
       setStepState(3, 'done')
       openSection('scripts')
 
@@ -351,67 +344,38 @@ export default function Home() {
             )}
           </Section>
 
-          {/* SECTION: SCRIPTS */}
+          {/* SECTION: CLAUDE PROMPT */}
           <Section
             id="scripts" open={openSections.scripts} onToggle={() => toggleSection('scripts')}
-            num="4" emoji="✍️" title="抖音视频脚本"
-            badge="3个方向 · 开箱即用"
+            num="4" emoji="✍️" title="一键生成抖音脚本"
+            badge="复制 → 粘贴到 Claude.ai"
             status={stepStatus[3]}
-            empty="结合抖音平台特点，生成 Hook-内容-CTA 完整脚本…"
+            empty="完成前两步抓取后，这里会生成可直接粘贴到 Claude.ai 的完整 Prompt…"
           >
-            {scripts.length > 0 && (
+            {claudePrompt && (
               <div>
-                <div className="script-tabs">
-                  {scripts.map((s, i) => (
-                    <button key={i} className={`script-tab ${i === activeScript ? 'active' : ''}`} onClick={() => setActiveScript(i)}>
-                      {s.style}
-                    </button>
-                  ))}
-                </div>
-                {scripts[activeScript] && (() => {
-                  const s = scripts[activeScript]
-                  return (
-                    <div className="script-body">
-                      <div className="script-title-row">
-                        <div className="script-video-title">{s.title}</div>
-                        <button className="btn-copy" onClick={() => copyText(
-                          `【${s.style}】\n标题：${s.title}\n\nHook：${s.hook}\n\n开场：${s.intro}\n\n正文：${s.body}\n\n结尾：${s.cta}\n\n标签：${(s.hashtags||[]).join(' ')}`
-                        )}>📋 复制</button>
-                      </div>
-                      {[
-                        { label: '⚡ HOOK · 前3秒', text: s.hook, cls: 'sb-hook' },
-                        { label: '🎬 开场 · 0–15s', text: s.intro, cls: 'sb-intro' },
-                        { label: '📖 正文 · 15s–1min', text: s.body, cls: 'sb-body' },
-                        { label: '🎯 CTA · 收尾', text: s.cta, cls: 'sb-cta' },
-                      ].map((b, i) => (
-                        <div key={i} className={`script-block ${b.cls}`}>
-                          <div className="sb-label">{b.label}</div>
-                          <div className="sb-text">{b.text}</div>
-                        </div>
-                      ))}
-                      <div className="script-footer">
-                        <div>
-                          <div className="meta-label">HASHTAGS</div>
-                          <div className="tag-list">{(s.hashtags||[]).map((h,i)=><span key={i} className="tag">{h}</span>)}</div>
-                        </div>
-                        <div>
-                          <div className="meta-label">时长建议</div>
-                          <div className="duration">{s.duration}</div>
-                        </div>
-                      </div>
-                      {s.shooting_tips && (
-                        <div className="shooting-tips">🎥 拍摄建议：{s.shooting_tips}</div>
-                      )}
-                      {s.conversion_design && (
-                        <div className="conversion-design">💰 转化路径：{s.conversion_design}</div>
-                      )}
+                <div className="claude-guide">
+                  <div className="guide-steps">
+                    <div className="guide-step">
+                      <div className="guide-num">1</div>
+                      <div className="guide-text">点击下方按钮，复制今日完整分析素材</div>
                     </div>
-                  )
-                })()}
-                <div className="script-actions">
-                  <button className="btn-action" onClick={() => copyText(
-                    scripts.map(s => `【${s.style}】\n标题：${s.title}\n\nHook：${s.hook}\n\n开场：${s.intro}\n\n正文：${s.body}\n\n结尾：${s.cta}\n\n标签：${(s.hashtags||[]).join(' ')}`).join('\n\n' + '─'.repeat(30) + '\n\n')
-                  )}>📄 复制全部脚本</button>
+                    <div className="guide-step">
+                      <div className="guide-num">2</div>
+                      <div className="guide-text">打开 <a href="https://claude.ai" target="_blank" rel="noreferrer" style={{color:'var(--accent3)'}}>claude.ai</a>，新建对话，粘贴并发送</div>
+                    </div>
+                    <div className="guide-step">
+                      <div className="guide-num">3</div>
+                      <div className="guide-text">Claude 自动输出爆火分析 + 3个完整抖音脚本</div>
+                    </div>
+                  </div>
+                  <button className="btn-copy-claude" onClick={() => copyText(claudePrompt)}>
+                    📋 复制今日完整 Prompt（粘贴到 Claude.ai）
+                  </button>
+                </div>
+                <div className="prompt-preview">
+                  <div className="prompt-preview-label">Prompt 预览（前300字）</div>
+                  <div className="prompt-preview-text">{claudePrompt.slice(0, 300)}…</div>
                 </div>
               </div>
             )}
@@ -623,6 +587,17 @@ export default function Home() {
         .meta-label { font-size: 9px; letter-spacing: .18em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; }
         .duration { font-size: 12px; color: var(--accent2); }
         .shooting-tips { margin-top: 14px; padding: 12px; background: rgba(155,89,255,.07); border: 1px solid rgba(155,89,255,.2); border-radius: 4px; font-size: 12px; color: var(--text-mid); line-height: 1.6; }
+        .conversion-design { margin-top: 10px; padding: 12px; background: rgba(0,255,159,.06); border: 1px solid rgba(0,255,159,.2); border-radius: 4px; font-size: 12px; color: var(--green); line-height: 1.6; }
+        .claude-guide { background: var(--surface2); border: 1px solid rgba(0,212,255,.25); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+        .guide-steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .guide-step { display: flex; align-items: center; gap: 14px; }
+        .guide-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent3); color: #000; font-weight: 700; font-size: 13px; display: grid; place-items: center; flex-shrink: 0; }
+        .guide-text { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
+        .btn-copy-claude { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: .03em; transition: all .2s; }
+        .btn-copy-claude:hover { background: #ff5472; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(255,60,95,.4); }
+        .prompt-preview { background: #050508; border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
+        .prompt-preview-label { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+        .prompt-preview-text { font-size: 11px; color: var(--text-dim); line-height: 1.7; white-space: pre-wrap; }
         .conversion-design { margin-top: 10px; padding: 12px; background: rgba(0,255,159,.06); border: 1px solid rgba(0,255,159,.2); border-radius: 4px; font-size: 12px; color: var(--green); line-height: 1.6; }
         .pick-card { background: var(--surface2); border: 1px solid rgba(255,159,28,.25); border-radius: 6px; padding: 14px; margin-bottom: 12px; }
         .pick-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
