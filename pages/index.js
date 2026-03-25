@@ -325,6 +325,28 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+                {analysis.top_picks?.length > 0 && (
+                  <div style={{ marginTop: 20 }}>
+                    <div className="trend-label" style={{ marginBottom: 10 }}>⭐ 今日最值得改编的内容</div>
+                    {analysis.top_picks.map((pick, i) => (
+                      <div key={i} className="pick-card">
+                        <div className="pick-header">
+                          <span className="pick-source">{pick.source}</span>
+                          <span className="pick-title">{pick.title}</span>
+                        </div>
+                        <div className="pick-row">
+                          <span className="pick-label">🎯 改编角度</span>
+                          <span className="pick-val">{pick.adaptation_angle}</span>
+                        </div>
+                        <div className="pick-row">
+                          <span className="pick-label">💰 转化设计</span>
+                          <span className="pick-val" style={{ color: 'var(--green)' }}>{pick.conversion_hook}</span>
+                        </div>
+                        <div className="pick-why">{pick.why_adapt}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </Section>
@@ -379,6 +401,9 @@ export default function Home() {
                       </div>
                       {s.shooting_tips && (
                         <div className="shooting-tips">🎥 拍摄建议：{s.shooting_tips}</div>
+                      )}
+                      {s.conversion_design && (
+                        <div className="conversion-design">💰 转化路径：{s.conversion_design}</div>
                       )}
                     </div>
                   )
@@ -598,6 +623,15 @@ export default function Home() {
         .meta-label { font-size: 9px; letter-spacing: .18em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; }
         .duration { font-size: 12px; color: var(--accent2); }
         .shooting-tips { margin-top: 14px; padding: 12px; background: rgba(155,89,255,.07); border: 1px solid rgba(155,89,255,.2); border-radius: 4px; font-size: 12px; color: var(--text-mid); line-height: 1.6; }
+        .conversion-design { margin-top: 10px; padding: 12px; background: rgba(0,255,159,.06); border: 1px solid rgba(0,255,159,.2); border-radius: 4px; font-size: 12px; color: var(--green); line-height: 1.6; }
+        .pick-card { background: var(--surface2); border: 1px solid rgba(255,159,28,.25); border-radius: 6px; padding: 14px; margin-bottom: 12px; }
+        .pick-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+        .pick-source { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; background: rgba(255,159,28,.15); color: var(--accent2); border: 1px solid rgba(255,159,28,.3); flex-shrink: 0; }
+        .pick-title { font-size: 13px; font-weight: 700; line-height: 1.5; color: var(--text); }
+        .pick-row { display: flex; gap: 10px; margin-bottom: 7px; align-items: flex-start; }
+        .pick-label { font-size: 11px; color: var(--text-dim); flex-shrink: 0; width: 72px; }
+        .pick-val { font-size: 12px; color: var(--text-mid); line-height: 1.55; }
+        .pick-why { margin-top: 8px; font-size: 11px; color: var(--text-dim); padding: 7px 10px; background: rgba(255,255,255,.03); border-radius: 3px; line-height: 1.55; }
         .script-actions { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
         .btn-action {
           font-size: 11px; padding: 7px 14px; border-radius: 4px;
